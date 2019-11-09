@@ -1,8 +1,22 @@
 import sqlite3
+import os
+from cryptography.fernet import Fernet
 import string
 
-db = sqlite3.connect('pwprotect.db')
 
+path = r"C:\Users\anves\PycharmProjects\pwdatabase\pwprotect.db"
+
+
+def dbcreate():
+    db = sqlite3.connect('pwprotect.db')
+    csr = db.cursor()
+    csr.execute("CREATE TABLE INFO(SITENAME TEXT, USERNAME TEXT, PASSWORD TEXT, PWKEY TEXT)")
+
+
+if not os.path.exists(path):
+    dbcreate()
+
+db = sqlite3.connect('pwprotect.db')
 
 def home():
     print("Welcome to Password Database!")
@@ -33,9 +47,11 @@ def insert():
         elif ch == "n":
             password = input("Enter your password for the site: ")
 
-        entities = (sitename, username, password)
+        enk, key = encrypt(password)
+
+        entities = (sitename, username, enk, key)
         cursor = db.cursor()
-        cursor.execute('INSERT INTO INFO(SITENAME,USERNAME,PASSWORD) VALUES (?,?,?)', entities)
+        cursor.execute('INSERT INTO INFO(SITENAME,USERNAME,PASSWORD,PWKEY) VALUES (?,?,?,?)', entities)
         db.commit()
         ch = input("Do you want to make another entry?(y/n): ")
         if ch == 'n':
@@ -43,6 +59,7 @@ def insert():
             print()
             if ch == 'y':
                 home()
+                break
 
             elif ch == 'n':
                 print("Thank you for using Password Database")
@@ -54,16 +71,29 @@ def insert():
         else:
             print("Invalid input")
             home()
+            break
 
 
 def search():
     while True:
         site = input('Enter the name of the site: ').lower()
         csr = db.cursor()
-        csr.execute('SELECT USERNAME, PASSWORD FROM INFO WHERE SITENAME == ?', (site,))
-        rows = csr.fetchall()
-        for row in rows:
-            print("Username, Password: ", row)
+        csr.execute('SELECT USERNAME, PASSWORD, PWKEY FROM INFO WHERE SITENAME == ?', (site,))
+        row = csr.fetchone()
+        if row is not None:
+            username = row[0]
+            enk = row[1]
+            key = row[2]
+        else:
+            print("Data not found")
+            home()
+            break
+
+        password = decrypt(enk,key)
+
+        print()
+        print("Username: ",username)
+        print("Password: ",password)
 
         ch = input("Do you want to search again?(y/n): ")
         if ch == 'n':
@@ -104,13 +134,18 @@ def update():
                 passw = pwgenerator()
             elif c == "n":
                 passw = input("Enter new password: ")
-            csr.execute('UPDATE INFO SET PASSWORD = ? WHERE SITENAME = ?', (passw, site))
+
+            enk,key = encrypt(passw)
+
+            csr.execute('UPDATE INFO SET PASSWORD = ? WHERE SITENAME = ?', (enk, site))
+            csr.execute('UPDATE INFO SET PWKEY = ? WHERE SITENAME = ?', (key,site))
             db.commit()
             print("Your new password is ", passw)
 
         else:
             print("Invalid input")
             home()
+            break
 
         ch = input("Do you want to update again?(y/n): ")
 
@@ -137,12 +172,12 @@ def update():
 def pwgenerator():
     import random
     pw = ""
-    lower = [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
-              "v", "w", "x", "y", "z" ]
-    upper = [ "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
-              "V", "W", "X", "Y", "Z" ]
-    digits = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
-    special = [ "@", "%", "+", '/', "!", "#", "$", "^", "?", ":", ",", ".", "_", "-" ]
+    lower = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
+             "v", "w", "x", "y", "z"]
+    upper = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
+             "V", "W", "X", "Y", "Z"]
+    digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    special = ["@", "%", "+", '/', "!", "#", "$", "^", "?", ":", ",", ".", "_", "-"]
     i = 0
     while i <= 15:
         n = random.randint(0, 4)
@@ -155,6 +190,22 @@ def pwgenerator():
         elif n == 4:
             pw = pw + random.choice(special)
         i += 1
+    print(pw)
+    return pw
+
+
+def encrypt(pw):
+    key = Fernet.generate_key()
+    f = Fernet(key)
+    b = bytes(pw,'utf-8')
+    encoded = f.encrypt(b)
+    return encoded, key
+
+
+def decrypt(enk,key):
+    f = Fernet(key)
+    decoded = f.decrypt(enk)
+    pw = str(decoded.decode('utf-8'))
     return pw
 
 
