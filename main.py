@@ -17,22 +17,6 @@ if not os.path.exists(path):
 db = sqlite3.connect('pwprotect.db')
 
 
-def home():
-    print("Welcome to Password Database!")
-    print()
-    print("1. Make a new entry")
-    print("2. Search in existing entries")
-    print("3. Update an existing entry")
-    ch = int(input("Enter your choice: "))
-    print()
-    if ch == 1:
-        insert()
-    if ch == 2:
-        search()
-    if ch == 3:
-        update()
-
-
 def insert(sitename, username, password):
     while True:
         '''
