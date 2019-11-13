@@ -1,8 +1,6 @@
 import sqlite3
 import os
 from cryptography.fernet import Fernet
-import string
-
 
 path = r"C:\Users\anves\PycharmProjects\pwdatabase\pwprotect.db"
 
@@ -17,6 +15,7 @@ if not os.path.exists(path):
     dbcreate()
 
 db = sqlite3.connect('pwprotect.db')
+
 
 def home():
     print("Welcome to Password Database!")
@@ -34,8 +33,9 @@ def home():
         update()
 
 
-def insert():
+def insert(sitename, username, password):
     while True:
+        '''
         print()
         sitename = input("Enter the name of the site: ").lower()
         username = input("Enter your username for the site: ")
@@ -46,13 +46,13 @@ def insert():
             print("Your generated password is ", password)
         elif ch == "n":
             password = input("Enter your password for the site: ")
-
+'''
         enk, key = encrypt(password)
-
         entities = (sitename, username, enk, key)
         cursor = db.cursor()
         cursor.execute('INSERT INTO INFO(SITENAME,USERNAME,PASSWORD,PWKEY) VALUES (?,?,?,?)', entities)
         db.commit()
+        '''
         ch = input("Do you want to make another entry?(y/n): ")
         if ch == 'n':
             ch = input("Do you want to return to home screen?(y/n): ")
@@ -72,11 +72,14 @@ def insert():
             print("Invalid input")
             home()
             break
+'''
+        break
+    return
 
 
-def search():
+def search(site):
     while True:
-        site = input('Enter the name of the site: ').lower()
+        # site = input('Enter the name of the site: ').lower()
         csr = db.cursor()
         csr.execute('SELECT USERNAME, PASSWORD, PWKEY FROM INFO WHERE SITENAME == ?', (site,))
         row = csr.fetchone()
@@ -85,12 +88,12 @@ def search():
             enk = row[1]
             key = row[2]
         else:
-            print("Data not found")
-            home()
-            break
+            # print("Data not found")
+            # home()
+            return "not found", "not found"
 
-        password = decrypt(enk,key)
-
+        password = decrypt(enk, key)
+        '''
         print()
         print("Username: ",username)
         print("Password: ",password)
@@ -114,34 +117,45 @@ def search():
             print("Invalid input")
             home()
             break
+            '''
+        break
+    return username, password
 
 
-def update():
+def update(site, user, passw):
     while True:
-        site = input('Enter the name of the site: ').lower()
-        ch = int(input("1 = Change Username, 2 = Change Password: "))
+        # site = input('Enter the name of the site: ').lower()
+        # ch = int(input("1 = Change Username, 2 = Change Password: "))
         csr = db.cursor()
-        if ch == 1:
-            user = input("Enter new username: ")
+        if passw is None:
+            # user = input("Enter new username: ")
             csr.execute('UPDATE INFO SET USERNAME = ? WHERE SITENAME = ?', (user, site))
             db.commit()
-            print("Your new username is ", user)
+            # print("Your new username is ", user)
 
-        elif ch == 2:
-            passw = ""
-            c = input("Do you want to use our generated password?(y/n): ")
+        elif user is None:
+            # passw = ""
+            # c = input("Do you want to use our generated password?(y/n): ")
+            '''
             if c == "y":
                 passw = pwgenerator()
             elif c == "n":
                 passw = input("Enter new password: ")
-
-            enk,key = encrypt(passw)
+            '''
+            enk, key = encrypt(passw)
 
             csr.execute('UPDATE INFO SET PASSWORD = ? WHERE SITENAME = ?', (enk, site))
-            csr.execute('UPDATE INFO SET PWKEY = ? WHERE SITENAME = ?', (key,site))
+            csr.execute('UPDATE INFO SET PWKEY = ? WHERE SITENAME = ?', (key, site))
             db.commit()
-            print("Your new password is ", passw)
+            # print("Your new password is ", passw)
 
+        else:
+            enk, key = encrypt(passw)
+            csr.execute('UPDATE INFO SET USERNAME = ? WHERE SITENAME = ?', (user, site))
+            csr.execute('UPDATE INFO SET PASSWORD = ? WHERE SITENAME = ?', (enk, site))
+            csr.execute('UPDATE INFO SET PWKEY = ? WHERE SITENAME = ?', (key, site))
+            db.commit()
+        '''
         else:
             print("Invalid input")
             home()
@@ -167,6 +181,8 @@ def update():
             print("Invalid input")
             home()
             break
+        '''
+        break
 
 
 def pwgenerator():
@@ -197,16 +213,13 @@ def pwgenerator():
 def encrypt(pw):
     key = Fernet.generate_key()
     f = Fernet(key)
-    b = bytes(pw,'utf-8')
+    b = bytes(pw, 'utf-8')
     encoded = f.encrypt(b)
     return encoded, key
 
 
-def decrypt(enk,key):
+def decrypt(enk, key):
     f = Fernet(key)
     decoded = f.decrypt(enk)
     pw = str(decoded.decode('utf-8'))
     return pw
-
-
-home()
