@@ -24,26 +24,39 @@ def entrygui():
     entryl1 = tkinter.Label(wini, text="Enter name of the site: ")
     entryl2 = tkinter.Label(wini, text="Enter your username for the site: ")
     entryl3 = tkinter.Label(wini, text="Enter the password the site: ")
+    rval = tkinter.IntVar(wini)
+    entryr1 = tkinter.Radiobutton(wini, text="Use computer generated password", variable=rval, value=1)
+    entryr2 = tkinter.Radiobutton(wini, text="Use your own password", variable=rval, value=2)
     entrye1 = tkinter.Entry(wini, width=20)
     entrye2 = tkinter.Entry(wini, width=20)
     entrye3 = tkinter.Entry(wini, width=20)
     entryl1.grid(row=0, column=0)
     entryl2.grid(row=1, column=0)
-    entryl3.grid(row=2, column=0)
+    entryl3.grid(row=4, column=0)
+    entryr1.grid(row=2, column=0)
+    entryr2.grid(row=3, column=0)
     entrye1.grid(row=0, column=1)
     entrye2.grid(row=1, column=1)
-    entrye3.grid(row=2, column=1)
+    entrye3.grid(row=4, column=1)
 
     def insertbt():
         site = str(entrye1.get()).lower()
         user = str(entrye2.get())
-        passw = str(entrye3.get())
+        radioval = int(rval.get())
+        passw = 0
+        if radioval == 1:
+            passw = main.pwgenerator()
+        elif radioval == 2:
+            passw = str(entrye3.get())
         main.insert(site, user, passw)
-        messagebox.showinfo("Success!", "Entry added!")
+        if radioval == 1:
+            messagebox.showinfo("Success!", "Entry added!\nYour password is: "+passw)
+        elif radioval == 2:
+            messagebox.showinfo("Success!", "Entry added!")
         wini.destroy()
 
     insert = tkinter.Button(wini, text="Insert", command=insertbt)
-    insert.grid(row=3, column=0)
+    insert.grid(row=5, column=0)
 
     wini.mainloop()
 
@@ -81,6 +94,9 @@ def updategui():
     userr = tkinter.Checkbutton(winu, text="New Username: ", variable=userv)
     passv = tkinter.IntVar(winu)
     passr = tkinter.Checkbutton(winu, text="New Password: ", variable=passv)
+    generatorv = tkinter.IntVar(winu)
+    generatorr1 = tkinter.Radiobutton(winu, text="Use computer generated password", variable=generatorv, value=1)
+    generatorr2 = tkinter.Radiobutton(winu, text="Use your own password", variable=generatorv, value=2)
     usere = tkinter.Entry(winu, width=20)
     passe = tkinter.Entry(winu, width=20)
     sitel.grid(row=1, column=0)
@@ -88,35 +104,56 @@ def updategui():
     userr.grid(row=2, column=0)
     usere.grid(row=2, column=1)
     passr.grid(row=3, column=0)
-    passe.grid(row=3, column=1)
+    passe.grid(row=5, column=1)
+    generatorr1.grid(row=4, column=0)
+    generatorr2.grid(row=5, column=0)
 
     def updatebt():
         userval = int(userv.get())
         passval = int(passv.get())
+        generatorval = int(generatorv.get())
         site = str(sitee.get()).lower()
+
         if userval == 1 and passval == 0:
             user = str(usere.get())
             passw = None
             main.update(site, user, passw)
             messagebox.showinfo("Success", "Username updated")
             winu.destroy()
+
         elif userval == 0 and passval == 1:
             user = None
-            passw = passe.get()
+            passw = 0
+            if generatorval == 1:
+                passw = main.pwgenerator()
+            elif generatorval == 2:
+                passw = passe.get()
             main.update(site, user, passw)
-            messagebox.showinfo("Success", "Password updated")
+            if generatorval == 1:
+                messagebox.showinfo("Success", "Password updated\nYour new password is: "+passw)
+            elif generatorval == 2:
+                messagebox.showinfo("Success", "Password updated")
             winu.destroy()
+
         elif userval == 1 and passval == 1:
             user = str(usere.get())
-            passw = str(passe.get())
+            passw = 0
+            if generatorval == 1:
+                passw = main.pwgenerator()
+            elif generatorval == 2:
+                passw = passe.get()
             main.update(site, user, passw)
-            messagebox.showinfo("Success", "Username and password updated")
+            if generatorval == 1:
+                messagebox.showinfo("Success", "Password updated\nYour new password is: " + passw)
+            elif generatorval == 2:
+                messagebox.showinfo("Success", "Password updated")
             winu.destroy()
+
         elif userval == 0 and passval == 0:
             messagebox.showinfo("Error", "Please check a box")
 
     updatebtn = tkinter.Button(winu, text="Update", command=updatebt)
-    updatebtn.grid(row=4, column=0)
+    updatebtn.grid(row=6, column=0)
 
     winu.mainloop()
 
@@ -133,5 +170,5 @@ def choicefn():
         messagebox.showinfo("ERROR", "Please enter a valid choice")
 
 
-submit = tkinter.Button(win1, text="Submit", command=choicefn).grid(row=5, column=1)
+submit = tkinter.Button(win1, text="Submit", command=choicefn).grid(row=6, column=0)
 win1.mainloop()
